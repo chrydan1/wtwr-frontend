@@ -24,6 +24,9 @@ import LoginModal from "../LoginModal/LoginModal";
 import { signup, signin, checkToken } from "../../utils/auth";
 import CurrentUserContext from "../../contexts/CurrentUserContext";
 import EditProfileModal from "../EditProfileModal/EditProfileModal";
+import DemoBanner from "../DemoBanner/DemoBanner";
+import { isDemoMode } from "../../utils/constants";
+import { getDemoItems, createDemoUser } from "../../utils/demo";
 
 function App() {
   const [clothingItems, setClothingItems] = useState([]);
@@ -58,6 +61,18 @@ function App() {
   }
 
   function handleAddItemSubmit(inputValues) {
+    if (isDemoMode) {
+      const newItem = {
+        ...inputValues,
+        _id: `demo-${Date.now()}`,
+        owner: currentUser._id,
+        likes: [],
+      };
+      setClothingItems((prevItems) => [newItem, ...prevItems]);
+      handleCloseModal();
+      return;
+    }
+
     const token = localStorage.getItem("jwt");
 
     addItem(inputValues, token)
@@ -71,6 +86,15 @@ function App() {
 
   function handleDeleteItem(card) {
     const id = card._id ?? card.id;
+
+    if (isDemoMode) {
+      setClothingItems((prevItems) =>
+        prevItems.filter((item) => item._id !== id),
+      );
+      handleCloseModal();
+      return;
+    }
+
     const token = localStorage.getItem("jwt");
 
     deleteItem(id, token)
@@ -92,6 +116,11 @@ function App() {
   }, []);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setClothingItems(getDemoItems());
+      return;
+    }
+
     getItems()
       .then((items) => {
         setClothingItems([...items].reverse());
@@ -102,7 +131,7 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("jwt");
 
-    if (!token) {
+    if (isDemoMode || !token) {
       return;
     }
 
@@ -119,6 +148,27 @@ function App() {
   }, []);
 
   function handleCardLike({ id, isLiked }) {
+    if (isDemoMode) {
+      if (!isLoggedIn) {
+        handleOpenLoginModal();
+        return;
+      }
+
+      setClothingItems((items) =>
+        items.map((item) => {
+          if (item._id !== id) return item;
+          const likes = item.likes || [];
+          return {
+            ...item,
+            likes: isLiked
+              ? likes.filter((like) => like !== currentUser._id)
+              : [...likes, currentUser._id],
+          };
+        }),
+      );
+      return;
+    }
+
     const token = localStorage.getItem("jwt");
 
     const apiCall = isLiked
@@ -151,6 +201,13 @@ function App() {
   }
 
   function handleRegister(values) {
+    if (isDemoMode) {
+      setCurrentUser(createDemoUser(values));
+      setIsLoggedIn(true);
+      handleCloseModal();
+      return;
+    }
+
     signup(values)
       .then(() => {
         return signin({
@@ -171,6 +228,13 @@ function App() {
   }
 
   function handleLogin(values) {
+  if (isDemoMode) {
+    setCurrentUser(createDemoUser({ email: values.email }));
+    setIsLoggedIn(true);
+    handleCloseModal();
+    return Promise.resolve();
+  }
+
   return signin(values)
     .then((data) => {
       localStorage.setItem("jwt", data.token);
@@ -191,6 +255,12 @@ function App() {
   }
 
   function handleUpdateUser({ name, avatar }) {
+    if (isDemoMode) {
+      setCurrentUser((user) => ({ ...user, name, avatar }));
+      handleCloseModal();
+      return;
+    }
+
     const token = localStorage.getItem("jwt");
 
     updateUser({ name, avatar }, token)
@@ -208,6 +278,8 @@ function App() {
         value={{ currentTempUnit, handleTempUnitChange }}
       >
         <div className="app">
+          {isDemoMode && <DemoBanner />}
+
           <Header
             handleOpenAddGarmentModal={handleOpenAddGarmentModal}
             handleOpenRegisterModal={handleOpenRegisterModal}

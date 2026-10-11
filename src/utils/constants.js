@@ -5,6 +5,9 @@ const baseUrl = import.meta.env.PROD
   ? "https://api.chrydan-wtwr.jumpingcrab.com"
   : "http://localhost:3001";
 
+// Demo mode runs the app without the backend (used for the GitHub Pages build)
+const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
+
 const weatherConditionImages = {
     day: {
         default: {
@@ -69,4 +72,4 @@ const weatherConditionImages = {
     },
 };
 
-export {coordinates, apiKey, weatherConditionImages, baseUrl};
+export {coordinates, apiKey, weatherConditionImages, baseUrl, isDemoMode};
