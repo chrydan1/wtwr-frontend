@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 // "ghpages" mode builds the demo version for GitHub Pages
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: mode === "ghpages" ? "/se_project_react/" : "/",
+  base: mode === "ghpages" ? "/wtwr-frontend/" : "/",
   server: {
     port: 3000,
   },
